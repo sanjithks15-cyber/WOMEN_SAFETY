@@ -216,13 +216,15 @@ class GeocodingService {
   }
 
   /// Fetches real-world nearby safe places using the Overpass API (OpenStreetMap)
-  static Future<List<Map<String, dynamic>>> fetchNearbySafePlaces(double lat, double lng, {double radius = 4000}) async {
-    // Query police, hospitals, pharmacies, fuel stations
+  static Future<List<Map<String, dynamic>>> fetchNearbySafePlaces(double lat, double lng, {double radius = 8000}) async {
+    // Query police, hospitals, pharmacies, fuel stations, stores, metro
     final query = '''
       [out:json][timeout:10];
       (
-        nwr["amenity"~"police|hospital|clinic|pharmacy"](around:$radius,$lat,$lng);
+        nwr["amenity"~"police|hospital|clinic|pharmacy|fuel"](around:$radius,$lat,$lng);
         nwr["healthcare"~"hospital|clinic"](around:$radius,$lat,$lng);
+        nwr["shop"~"convenience|supermarket"](around:$radius,$lat,$lng);
+        nwr["railway"="station"](around:$radius,$lat,$lng);
       );
       out center;
     ''';
@@ -265,7 +267,9 @@ class GeocodingService {
             String category = 'store';
             if (amenity == 'police') category = 'police';
             else if (amenity == 'hospital' || amenity == 'clinic') category = 'hospital';
-            else if (amenity == 'pharmacy') category = 'store';
+            else if (amenity == 'pharmacy' || tags['shop'] != null) category = 'store';
+            else if (amenity == 'fuel') category = 'petrol';
+            else if (tags['railway'] == 'station' || tags['station'] == 'subway') category = 'metro';
 
             String phone = tags['phone'] ?? tags['contact:phone'] ?? '112'; // Fallback to emergency
             String address = tags['addr:street'] ?? tags['addr:full'] ?? 'Nearby Location';
