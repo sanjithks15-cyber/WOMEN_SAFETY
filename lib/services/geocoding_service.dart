@@ -214,4 +214,68 @@ class GeocodingService {
     }
     return true;
   }
+
+  /// Fetches real-world nearby safe places using the Overpass API (OpenStreetMap)
+  static Future<List<Map<String, dynamic>>> fetchNearbySafePlaces(double lat, double lng, {double radius = 4000}) async {
+    // Query police, hospitals, pharmacies, fuel stations
+    final query = '''
+      [out:json][timeout:10];
+      (
+        node["amenity"~"police|hospital|clinic|pharmacy"](around:$radius,$lat,$lng);
+        node["healthcare"~"hospital|clinic"](around:$radius,$lat,$lng);
+      );
+      out body;
+    ''';
+
+    final url = Uri.parse('https://overpass-api.de/api/interpreter');
+    try {
+      final response = await http.post(
+        url, 
+        body: query,
+        headers: {'User-Agent': 'SafeHerHackathonApp/1.0'}
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> elements = data['elements'] ?? [];
+        final List<Map<String, dynamic>> results = [];
+
+        for (var el in elements) {
+          if (el['type'] == 'node') {
+            final tags = el['tags'] ?? {};
+            final lat = el['lat'];
+            final lon = el['lon'];
+            
+            String amenity = tags['amenity'] ?? tags['healthcare'] ?? '';
+            String name = tags['name'] ?? tags['brand'] ?? 'Safe Location';
+            
+            if (name.isEmpty || name == 'Safe Location') continue; // Skip unnamed nodes to reduce clutter
+
+            String category = 'store';
+            if (amenity == 'police') category = 'police';
+            else if (amenity == 'hospital' || amenity == 'clinic') category = 'hospital';
+            else if (amenity == 'pharmacy') category = 'store';
+
+            String phone = tags['phone'] ?? tags['contact:phone'] ?? '112'; // Fallback to emergency
+            String address = tags['addr:street'] ?? tags['addr:full'] ?? 'Nearby Location';
+
+            results.add({
+              'id': el['id'].toString(),
+              'name': name,
+              'category': category,
+              'latitude': lat,
+              'longitude': lon,
+              'address': address,
+              'phone': phone,
+              'is24x7': tags['opening_hours'] == '24/7',
+            });
+          }
+        }
+        return results;
+      }
+    } catch (e) {
+      debugPrint('Overpass API fetch failed: $e');
+    }
+    return [];
+  }
 }

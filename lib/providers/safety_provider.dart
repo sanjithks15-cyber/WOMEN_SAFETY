@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/geocoding_service.dart';
 
 class SafetyProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService.instance;
@@ -30,17 +31,27 @@ class SafetyProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchSafePlaces() async {
+  Future<void> fetchSafePlaces({double? lat, double? lng}) async {
     _isLoading = true;
     notifyListeners();
-    final result = await _apiService.getSafePlaces();
-    _isLoading = false;
-    if (result != null) {
+    
+    if (lat != null && lng != null) {
+      // Use live Overpass API for real nearby safe places
+      final result = await GeocodingService.fetchNearbySafePlaces(lat, lng);
       _safePlaces = result;
       _errorMessage = null;
     } else {
-      _errorMessage = "Failed to load safe places.";
+      // Fallback to mock data from backend if no GPS
+      final result = await _apiService.getSafePlaces();
+      if (result != null) {
+        _safePlaces = result;
+        _errorMessage = null;
+      } else {
+        _errorMessage = "Failed to load safe places.";
+      }
     }
+    
+    _isLoading = false;
     notifyListeners();
   }
 

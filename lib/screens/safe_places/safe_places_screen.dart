@@ -60,6 +60,14 @@ class _SafePlacesScreenState extends State<SafePlacesScreen> {
           _currentPosition = position;
         });
 
+        // Fetch live real-world safe places around user
+        if (mounted) {
+          context.read<SafetyProvider>().fetchSafePlaces(
+            lat: position.latitude, 
+            lng: position.longitude
+          );
+        }
+
         // Center map on user location
         _mapController.move(
           LatLng(position.latitude, position.longitude),
