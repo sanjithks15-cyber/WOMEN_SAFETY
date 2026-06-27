@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/common_widgets.dart';
 import '../../models/safe_place_model.dart';
 import '../../providers/safety_provider.dart';
+import '../journey/active_journey_screen.dart';
 
 class SafePlacesScreen extends StatefulWidget {
   const SafePlacesScreen({Key? key}) : super(key: key);
@@ -95,17 +96,22 @@ class _SafePlacesScreenState extends State<SafePlacesScreen> {
     }
   }
 
-  void _navigateToPlace(double latitude, double longitude) async {
-    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open map navigation.')),
-        );
-      }
-    }
+  void _navigateToPlace(double latitude, double longitude, String name) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActiveJourneyScreen(
+          journey: {
+            'to': name,
+            'routeType': 'safest',
+            'startLat': _currentPosition?.latitude ?? _defaultLatitude,
+            'startLng': _currentPosition?.longitude ?? _defaultLongitude,
+            'endLat': latitude,
+            'endLng': longitude,
+          },
+        ),
+      ),
+    );
   }
 
   IconData _getCategoryIcon(String category) {
@@ -382,7 +388,7 @@ class _SafePlacesScreenState extends State<SafePlacesScreen> {
                     Row(
                       children: [
                         ElevatedButton.icon(
-                          onPressed: () => _navigateToPlace(place.latitude, place.longitude),
+                          onPressed: () => _navigateToPlace(place.latitude, place.longitude, place.name),
                           icon: const Icon(Icons.navigation_rounded, size: 14),
                           label: const Text('Directions'),
                           style: ElevatedButton.styleFrom(
@@ -507,7 +513,7 @@ class _SafePlacesScreenState extends State<SafePlacesScreen> {
                       Row(
                         children: [
                           ElevatedButton.icon(
-                            onPressed: () => _navigateToPlace(place.latitude, place.longitude),
+                            onPressed: () => _navigateToPlace(place.latitude, place.longitude, place.name),
                             icon: const Icon(Icons.navigation_rounded, size: 16),
                             label: const Text('Directions'),
                             style: ElevatedButton.styleFrom(

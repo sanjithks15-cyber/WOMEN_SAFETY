@@ -70,9 +70,20 @@ class _ActiveJourneyScreenState extends State<ActiveJourneyScreen> {
     final fromAddress = widget.journey['from'] ?? '';
     final toAddress = widget.journey['to'] ?? '';
 
-    // Step 1: Geocode starting and ending addresses
-    final start = await GeocodingService.getCoordinates(fromAddress);
-    final end = await GeocodingService.getCoordinates(toAddress);
+    // Step 1: Get coordinates (either provided directly or via geocoding)
+    LatLng? start;
+    if (widget.journey['startLat'] != null && widget.journey['startLng'] != null) {
+      start = LatLng(widget.journey['startLat'], widget.journey['startLng']);
+    } else {
+      start = await GeocodingService.getCoordinates(fromAddress);
+    }
+
+    LatLng? end;
+    if (widget.journey['endLat'] != null && widget.journey['endLng'] != null) {
+      end = LatLng(widget.journey['endLat'], widget.journey['endLng']);
+    } else {
+      end = await GeocodingService.getCoordinates(toAddress);
+    }
 
     if (start == null || end == null) {
       if (mounted) {
