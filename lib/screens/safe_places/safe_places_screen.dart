@@ -98,7 +98,7 @@ class _SafePlacesScreenState extends State<SafePlacesScreen> {
   void _navigateToPlace(double latitude, double longitude) async {
     final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
     if (await canLaunchUrl(url)) {
-      await launchUrl(url);
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
