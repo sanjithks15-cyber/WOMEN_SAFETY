@@ -1,0 +1,118 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Enums removed for SQLite compatibility
+
+model User {
+  id            String         @id @default(uuid())
+  phone         String         @unique
+  name          String
+  passwordHash  String
+  role          String         @default("USER")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?      // Soft delete
+
+  guardians     Guardian[]
+  sosAlerts     SOSAlert[]
+  journeys      Journey[]
+  notifications Notification[]
+  roadReports   RoadReport[]
+}
+
+model Guardian {
+  id         String    @id @default(uuid())
+  userId     String
+  name       String
+  relation   String
+  phone      String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime? // Soft delete
+
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+model SOSAlert {
+  id        String      @id @default(uuid())
+  userId    String
+  status    String @default("ACTIVE")
+  latitude  Float
+  longitude Float
+  createdAt DateTime    @default(now())
+  resolvedAt DateTime?
+
+  user      User        @relation(fields: [userId], references: [id])
+}
+
+model Journey {
+  id         String        @id @default(uuid())
+  userId     String
+  from       String
+  to         String
+  status     String @default("ACTIVE")
+  duration   String
+  routeType  String        // 'safest' or 'fastest'
+  progress   Float         @default(0.0)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  deletedAt  DateTime?     // Soft delete
+
+  user       User          @relation(fields: [userId], references: [id])
+}
+
+model CrimeZone {
+  id           String   @id @default(uuid())
+  name         String
+  latitude     Float
+  longitude    Float
+  riskLevel    String   // 'high', 'medium', 'low'
+  description  String
+  reportsCount Int      @default(0)
+  lastIncident String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model SafePlace {
+  id        String   @id @default(uuid())
+  name      String
+  category  String   // 'police', 'hospital', 'metro', 'store', 'petrol'
+  latitude  Float
+  longitude Float
+  address   String
+  phone     String
+  is24x7    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RoadReport {
+  id           String   @id @default(uuid())
+  roadName     String
+  reporterName String
+  rating       Float
+  tags         String   // Comma separated tags e.g. 'Well Lit,Busy Street'
+  comment      String
+  createdAt    DateTime @default(now())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // 'sos', 'crime', 'journey', 'guardian'
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
