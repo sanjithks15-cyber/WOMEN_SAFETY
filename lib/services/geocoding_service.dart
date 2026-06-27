@@ -221,10 +221,10 @@ class GeocodingService {
     final query = '''
       [out:json][timeout:10];
       (
-        node["amenity"~"police|hospital|clinic|pharmacy"](around:$radius,$lat,$lng);
-        node["healthcare"~"hospital|clinic"](around:$radius,$lat,$lng);
+        nwr["amenity"~"police|hospital|clinic|pharmacy"](around:$radius,$lat,$lng);
+        nwr["healthcare"~"hospital|clinic"](around:$radius,$lat,$lng);
       );
-      out body;
+      out center;
     ''';
 
     final url = Uri.parse('https://overpass-api.de/api/interpreter');
@@ -241,11 +241,22 @@ class GeocodingService {
         final List<Map<String, dynamic>> results = [];
 
         for (var el in elements) {
-          if (el['type'] == 'node') {
+          if (el['type'] == 'node' || el['type'] == 'way' || el['type'] == 'relation') {
             final tags = el['tags'] ?? {};
-            final lat = el['lat'];
-            final lon = el['lon'];
             
+            // Extract coordinates depending on type
+            double? nodeLat;
+            double? nodeLon;
+            if (el['type'] == 'node') {
+              nodeLat = el['lat'];
+              nodeLon = el['lon'];
+            } else if (el['center'] != null) {
+              nodeLat = el['center']['lat'];
+              nodeLon = el['center']['lon'];
+            }
+
+            if (nodeLat == null || nodeLon == null) continue;
+
             String amenity = tags['amenity'] ?? tags['healthcare'] ?? '';
             String name = tags['name'] ?? tags['brand'] ?? 'Safe Location';
             
@@ -263,8 +274,8 @@ class GeocodingService {
               'id': el['id'].toString(),
               'name': name,
               'category': category,
-              'latitude': lat,
-              'longitude': lon,
+              'latitude': nodeLat,
+              'longitude': nodeLon,
               'address': address,
               'phone': phone,
               'is24x7': tags['opening_hours'] == '24/7',

@@ -37,9 +37,21 @@ class SafetyProvider extends ChangeNotifier {
     
     if (lat != null && lng != null) {
       // Use live Overpass API for real nearby safe places
-      final result = await GeocodingService.fetchNearbySafePlaces(lat, lng);
-      _safePlaces = result;
-      _errorMessage = null;
+      final result = await GeocodingService.fetchNearbySafePlaces(lat, lng, radius: 8000);
+      
+      if (result.isNotEmpty) {
+        _safePlaces = result;
+        _errorMessage = null;
+      } else {
+        // Fallback to mock data from backend if no live data found in radius
+        final mockResult = await _apiService.getSafePlaces();
+        if (mockResult != null) {
+          _safePlaces = mockResult;
+          _errorMessage = null;
+        } else {
+          _errorMessage = "Failed to load safe places.";
+        }
+      }
     } else {
       // Fallback to mock data from backend if no GPS
       final result = await _apiService.getSafePlaces();
