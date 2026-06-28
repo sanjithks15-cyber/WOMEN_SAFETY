@@ -4,7 +4,7 @@
   "description": "Backend API for SafeHer / SAMASOC Women Safety App",
   "main": "dist/index.js",
   "scripts": {
-    "build": "npx prisma generate && tsc",
+    "build": "chmod +x node_modules/.bin/prisma || true; npx prisma generate && tsc",
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "prisma:generate": "prisma generate",
