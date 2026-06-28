@@ -15,7 +15,8 @@ export class JourneyService {
   ) {
     const active = await this.journeyRepo.findActiveByUserId(userId);
     if (active) {
-      throw new BadRequestException("You already have an active journey. Complete or cancel it first.");
+      // Auto-cancel previous uncompleted journey so they don't get stuck
+      await this.journeyRepo.update(active.id, { status: "CANCELLED" });
     }
 
     return this.journeyRepo.create({
